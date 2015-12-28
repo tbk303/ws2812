@@ -74,8 +74,6 @@ void *mapmem(unsigned base, unsigned size)
 
 void *unmapmem(void *addr, unsigned size)
 {
-   unsigned offset = (unsigned)addr % PAGE_SIZE;
-   addr = addr - offset;
    int s = munmap(addr, size);
    if (s != 0) {
       printf("munmap error %d\n", s);
@@ -101,8 +99,7 @@ static int mbox_property(int file_desc, void *buf)
       ret_val = ioctl(fd, IOCTL_MBOX_PROPERTY, buf);
 
       if (ret_val < 0) {
-         // printf("ioctl_set_msg failed, errno %d: %m\n", errno);
-		 // XXX: this is apparently the only error, so why would we bother anyone?
+         printf("ioctl_set_msg failed, errno %d: %m\n", errno);
       }
    }
 #ifdef DEBUG
@@ -268,42 +265,32 @@ unsigned execute_qpu(int file_desc, unsigned num_qpus, unsigned control, unsigne
    return p[5];
 }
 
-// mbox_open errors go here
-int mbox_errno = MBOX_ERRNO_OK;
-
 int mbox_open(void) {
    int file_desc;
-   char *filename = NULL;
+   char filename[64];
 
-   mbox_errno = MBOX_ERRNO_OK;
+   file_desc = open("/dev/vcio", 0);
+   if (file_desc >= 0)
+   {
+       return file_desc;
+   }
 
    // open a char device file used for communicating with kernel mbox driver
-   filename = tempnam("/tmp", "mbox");
-   if (filename == NULL) {
-	   mbox_errno = MBOX_ERRNO_CANT_TEMPNAM;
-	   goto err;
-   }
+   sprintf(filename, "/tmp/mailbox-%d", getpid());
    unlink(filename);
    if (mknod(filename, S_IFCHR|0600, makedev(100, 0)) < 0) {
-      // printf("Failed to create mailbox device %s: %m\n", filename);
-	  mbox_errno = MBOX_ERRNO_CANT_MKNOD;
-      goto err;
+      printf("Failed to create mailbox device %s: %m\n", filename);
+      return -1;
    }
    file_desc = open(filename, 0);
    if (file_desc < 0) {
-      // printf("Can't open device file %s: %m\n", filename);
-	  mbox_errno = MBOX_ERRNO_CANT_OPEN;
-      goto err;
+      printf("Can't open device file %s: %m\n", filename);
+      unlink(filename);
+      return -1;
    }
    unlink(filename);
 
    return file_desc;
-err:
-   if (filename != NULL) {
-	   unlink(filename);
-	   free(filename);
-   }
-   return -1;
 }
 
 void mbox_close(int file_desc) {
