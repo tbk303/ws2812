@@ -15,7 +15,7 @@
  *         provided with the distribution.
  *     3.  Neither the name of the owner nor the names of its contributors may be used to endorse
  *         or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
  * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE
@@ -31,6 +31,8 @@
 #ifndef __WS2811_H__
 #define __WS2811_H__
 
+
+#include "rpihw.h"
 #include "pwm.h"
 
 
@@ -51,6 +53,7 @@ typedef struct
 typedef struct
 {
     struct ws2811_device *device;                //< Private data for driver use
+    const rpi_hw_t *rpi_hw;                      //< RPI Hardware Information
     uint32_t freq;                               //< Required output frequency
     int dmanum;                                  //< DMA number _not_ already in use
     ws2811_channel_t channel[RPI_PWM_CHANNELS];
@@ -59,9 +62,9 @@ typedef struct
 
 int ws2811_init(ws2811_t *ws2811);               //< Initialize buffers/hardware
 void ws2811_fini(ws2811_t *ws2811);              //< Tear it all down
-extern uint8_t ws2811_direct_colors;             //< Set to non-zero to bypass "brightness" [gamma correction] altogether (default is 0)
+uint8_t ws2811_direct_colors;                    //< Set to non-zero to bypass "brightness" [gamma correction] altogether (default is 0)
 int ws2811_render(ws2811_t *ws2811);             //< Send LEDs off to hardware
-extern uint32_t ws2811_dma_error;                //< DMA errors from ws2811_wait go here
+uint32_t ws2811_dma_error;                       //< DMA errors from ws2811_wait go here
 int ws2811_wait(ws2811_t *ws2811);               //< Wait for DMA completion
 
 
